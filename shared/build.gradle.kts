@@ -18,7 +18,11 @@ kotlin {
             isStatic = true
         }
     }
-    
+
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     android {
        namespace = "com.example.fiscus.shared"
        compileSdk = libs.versions.android.compileSdk.get().toInt()
@@ -64,12 +68,20 @@ kotlin {
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenmodel)
             implementation(libs.voyager.koin)
+            implementation(libs.voyager.tab.navigator)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.sqldelight.sqlite.driver)
+        }
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.androidx.testExt.junit)
         }
     }
 }

@@ -1,0 +1,26 @@
+import com.example.fiscus.domain.model.Category;
+import com.example.fiscus.domain.model.ExpenseSource;
+import kotlinx.datetime.LocalDateTime;
+
+CREATE TABLE expenseEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    amount INTEGER NOT NULL,
+    merchant TEXT,
+    category TEXT AS Category NOT NULL,
+    date TEXT AS LocalDateTime NOT NULL,
+    note TEXT,
+    source TEXT AS ExpenseSource NOT NULL,
+    receiptImagePath TEXT
+);
+
+CREATE INDEX expenseEntity_date ON expenseEntity(date);
+
+selectByMonth:
+SELECT *
+FROM expenseEntity
+WHERE date >= :start AND date < :end
+ORDER BY date DESC;
+
+insert:
+INSERT INTO expenseEntity(id, amount, merchant, category, date, note, source, receiptImagePath)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
