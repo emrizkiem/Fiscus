@@ -113,6 +113,7 @@ class ExpenseListScreenModelTest {
         val state = screenModel.state.value
 
         assertEquals(september, state.selectedMonth)
+        assertEquals(october, state.currentMonth)
         assertEquals(Category.TRANSPORT, state.selectedCategory)
         assertEquals(listOf("grab"), state.expenses.map { it.id })
         assertEquals(32_000, state.monthTotal)

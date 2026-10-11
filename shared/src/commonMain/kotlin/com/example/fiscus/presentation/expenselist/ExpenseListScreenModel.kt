@@ -16,7 +16,7 @@ import kotlinx.datetime.YearMonth
 
 class ExpenseListScreenModel(
     private val repository: ExpenseRepository,
-    currentMonth: YearMonth,
+    private val currentMonth: YearMonth,
 ) : ScreenModel {
     private val selectedMonth = MutableStateFlow(currentMonth)
     private val selectedCategory = MutableStateFlow<Category?>(null)
@@ -29,6 +29,7 @@ class ExpenseListScreenModel(
     val state: StateFlow<ExpenseListState> =
         combine(monthExpenses, selectedCategory) { (month, expenses), category ->
             ExpenseListState(
+                currentMonth = currentMonth,
                 selectedMonth = month,
                 selectedCategory = category,
                 monthTotal = expenses.sumOf { it.amount },
@@ -39,7 +40,7 @@ class ExpenseListScreenModel(
         }.stateIn(
             scope = screenModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ExpenseListState(selectedMonth = currentMonth),
+            initialValue = ExpenseListState(currentMonth = currentMonth, selectedMonth = currentMonth),
         )
 
     fun selectMonth(month: YearMonth) {
