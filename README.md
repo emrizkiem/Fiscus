@@ -1,4 +1,4 @@
-# Fiscus 🧾
+# Fiscus
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg)](https://kotlinlang.org)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.11.1-blue.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)
@@ -6,18 +6,6 @@
 A personal expense tracker built with Kotlin Multiplatform and Compose Multiplatform, targeting Android and iOS with a fully shared UI. Snap or share a receipt (mobile banking, e-wallet, or paper receipt), review the amount and merchant, and keep everything stored locally on your device.
 
 <!-- TODO: add a demo GIF or screenshots here -->
-
-## Features
-- Monthly expense list with total and transaction count
-- Filter by category: Food, Shopping, Transport, Bills, Health, Entertainment, Other
-- Local-first storage with SQLDelight; no account or internet connection needed
-- Light and dark theme
-
-### Roadmap
-- Month picker and manual expense form
-- Summary screen with a 5-month trend and per-category breakdown
-- Receipt scanning with on-device OCR (ML Kit on Android, Vision on iOS)
-- Share a receipt image from other apps into Fiscus
 
 ## Project Structure
 - `/shared` - Shared code for all platforms (logic and Compose UI)
