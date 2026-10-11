@@ -1,31 +1,77 @@
-This is a Kotlin Multiplatform project targeting Android, iOS.
+# Fiscus 🧾
 
-* [/iosApp](./iosApp/iosApp) contains an iOS application. Even if you’re sharing your UI with Compose Multiplatform,
-  you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-blue.svg)](https://kotlinlang.org)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.11.1-blue.svg)](https://www.jetbrains.com/lp/compose-multiplatform/)
 
-* [/shared](./shared/src) is for code that will be shared across your Compose Multiplatform applications.
-  It contains several subfolders:
-  - [commonMain](./shared/src/commonMain/kotlin) is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    the [iosMain](./shared/src/iosMain/kotlin) folder would be the right place for such calls.
-    Similarly, if you want to edit the Desktop (JVM) specific part, the [jvmMain](./shared/src/jvmMain/kotlin)
-    folder is the appropriate location.
+A personal expense tracker built with Kotlin Multiplatform and Compose Multiplatform, targeting Android and iOS with a fully shared UI. Snap or share a receipt (mobile banking, e-wallet, or paper receipt), review the amount and merchant, and keep everything stored locally on your device.
 
-### Running the apps
+<!-- TODO: add a demo GIF or screenshots here -->
 
-Use the run configurations provided by the run widget in your IDE's toolbar. You can also use these commands and options:
+## Features
+- Monthly expense list with total and transaction count
+- Filter by category: Food, Shopping, Transport, Bills, Health, Entertainment, Other
+- Local-first storage with SQLDelight; no account or internet connection needed
+- Light and dark theme
 
-- Android app: `./gradlew :androidApp:assembleDebug`
-- iOS app: open the [/iosApp](./iosApp) directory in Xcode and run it from there.
+### Roadmap
+- Month picker and manual expense form
+- Summary screen with a 5-month trend and per-category breakdown
+- Receipt scanning with on-device OCR (ML Kit on Android, Vision on iOS)
+- Share a receipt image from other apps into Fiscus
 
-### Running tests
+## Project Structure
+- `/shared` - Shared code for all platforms (logic and Compose UI)
+  - `commonMain` - Code shared across all platforms
+    - `domain` - Models and repository interfaces (pure Kotlin)
+    - `data` - SQLDelight database and repository implementations
+    - `di` - Koin modules
+    - `presentation` - Screens, ScreenModels, theme, and shared components
+    - `sqldelight` - Database schema (`.sq` files)
+  - `androidMain` - Android-specific code
+  - `iosMain` - iOS-specific code
+  - `commonTest` - Shared tests, run on both the JVM and the iOS simulator
+- `/androidApp` - Android application entry point
+- `/iosApp` - iOS application entry point (Xcode project)
 
-Use the run button in your IDE's editor gutter, or run tests using Gradle tasks:
+## Architecture
+- **Clean Architecture (lightweight)**: `presentation → domain ← data`
+- **MVVM with unidirectional data flow**: each screen has a Voyager `ScreenModel` exposing a single immutable state
+- **expect/actual** for platform-specific pieces such as the SQLite driver
 
-- Android tests: `./gradlew :shared:testAndroidHostTest`
-- iOS tests: `./gradlew :shared:iosSimulatorArm64Test`
+## Tech Stack
+- **Kotlin Multiplatform** - Share code between platforms
+- **Compose Multiplatform** - Shared UI framework with Material 3
+- **SQLDelight** - Type-safe local database
+- **Koin** - Dependency injection
+- **Voyager** - Navigation, tabs, and ScreenModel
+- **KotlinX Coroutines** - Asynchronous programming with Flow
+- **KotlinX DateTime** - Date and time handling
 
----
+## Getting Started
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)…
+### Prerequisites
+- Android Studio with the Kotlin Multiplatform plugin
+- JDK 17 or higher (the JDK bundled with Android Studio works)
+- Xcode with an iOS simulator runtime installed (for iOS development)
+- Android device or emulator running Android 7.0 (API 24) or higher
+
+### Building the Project
+1. Clone the repository
+2. Open the project in Android Studio
+3. Sync Gradle files
+
+### Android
+```bash
+./gradlew :androidApp:installDebug
+```
+
+### iOS
+Select the `iosApp` run configuration in Android Studio and pick a simulator, or open `iosApp/iosApp.xcodeproj` in Xcode and run the project.
+
+> Xcode builds the shared Kotlin framework through Gradle, so a JDK must be visible to Xcode. If the build fails with "Unable to locate a Java Runtime", install a system JDK or run from Android Studio instead.
+
+### Running Tests
+```bash
+./gradlew :shared:testAndroidHostTest      # shared tests on the JVM
+./gradlew :shared:iosSimulatorArm64Test    # shared tests on the iOS simulator
+```
