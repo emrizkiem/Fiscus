@@ -26,6 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.SpanStyle
@@ -41,6 +44,7 @@ import cafe.adriel.voyager.navigator.tab.TabOptions
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.presentation.common.component.CategoryIcon
+import com.example.fiscus.presentation.common.component.MonthPickerSheet
 import com.example.fiscus.presentation.common.util.formatMonthYear
 import com.example.fiscus.presentation.common.util.formatRupiah
 import com.example.fiscus.presentation.common.util.formatShortDate
@@ -66,12 +70,25 @@ object ExpenseListTab : Tab {
     override fun Content() {
         val screenModel = koinScreenModel<ExpenseListScreenModel>()
         val state by screenModel.state.collectAsState()
+        var showMonthPicker by rememberSaveable { mutableStateOf(false) }
 
         ExpenseListContent(
             state = state,
             onCategorySelected = screenModel::selectCategory,
-            onCalendarClick = {},
+            onCalendarClick = { showMonthPicker = true },
         )
+
+        if (showMonthPicker) {
+            MonthPickerSheet(
+                selectedMonth = state.selectedMonth,
+                currentMonth = state.currentMonth,
+                onMonthSelected = { month ->
+                    screenModel.selectMonth(month)
+                    showMonthPicker = false
+                },
+                onDismiss = { showMonthPicker = false },
+            )
+        }
     }
 }
 
@@ -163,7 +180,7 @@ private fun SummaryCard(state: ExpenseListState) {
                 Spacer(Modifier.height(4.dp))
                 Text("${state.monthTransactionCount} transaksi", style = MaterialTheme.typography.bodySmall)
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(8.dp))
             Image(
                 painter = painterResource(Res.drawable.ic_banner),
                 contentDescription = null,

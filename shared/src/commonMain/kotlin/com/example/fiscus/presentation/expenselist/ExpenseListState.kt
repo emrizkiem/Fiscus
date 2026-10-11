@@ -5,6 +5,7 @@ import com.example.fiscus.domain.model.Expense
 import kotlinx.datetime.YearMonth
 
 data class ExpenseListState(
+    val currentMonth: YearMonth,
     val selectedMonth: YearMonth,
     val selectedCategory: Category? = null,
     val monthTotal: Long = 0,
