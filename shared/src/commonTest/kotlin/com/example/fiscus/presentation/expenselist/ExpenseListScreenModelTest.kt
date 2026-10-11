@@ -3,6 +3,7 @@ package com.example.fiscus.presentation.expenselist
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
+import com.example.fiscus.mock.MockExpenseRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -41,7 +42,7 @@ class ExpenseListScreenModelTest {
     }
 
     private fun TestScope.createScreenModel(
-        repository: FakeExpenseRepository = FakeExpenseRepository(listOf(coffee, groceries, bakso, grab)),
+        repository: MockExpenseRepository = MockExpenseRepository(listOf(coffee, groceries, bakso, grab)),
     ): ExpenseListScreenModel {
         val screenModel = ExpenseListScreenModel(repository, currentMonth = october)
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { screenModel.state.collect {} }
@@ -121,7 +122,7 @@ class ExpenseListScreenModelTest {
 
     @Test
     fun stateUpdatesWhenExpenseIsAdded() = runTest {
-        val repository = FakeExpenseRepository(listOf(coffee))
+        val repository = MockExpenseRepository(listOf(coffee))
         val screenModel = createScreenModel(repository)
 
         repository.addExpense(groceries)

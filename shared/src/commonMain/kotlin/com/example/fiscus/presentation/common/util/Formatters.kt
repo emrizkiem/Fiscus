@@ -1,5 +1,6 @@
 package com.example.fiscus.presentation.common.util
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.YearMonth
 
@@ -20,6 +21,9 @@ fun formatRupiah(amount: Long): String {
 
 fun formatShortDate(date: LocalDateTime): String =
     "${date.day} ${shortMonthNames[date.month.ordinal]}"
+
+fun formatFullDate(date: LocalDate): String =
+    "${date.day} ${shortMonthNames[date.month.ordinal]} ${date.year}"
 
 fun formatShortMonth(yearMonth: YearMonth): String = shortMonthNames[yearMonth.month.ordinal]
 

@@ -1,4 +1,4 @@
-package com.example.fiscus.presentation.expenselist
+package com.example.fiscus.mock
 
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.repository.ExpenseRepository
@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.datetime.YearMonth
 
-class FakeExpenseRepository(initial: List<Expense> = emptyList()) : ExpenseRepository {
+class MockExpenseRepository(initial: List<Expense> = emptyList()) : ExpenseRepository {
     private val expenses = MutableStateFlow(initial)
 
     override fun getExpensesByMonth(yearMonth: YearMonth): Flow<List<Expense>> =
