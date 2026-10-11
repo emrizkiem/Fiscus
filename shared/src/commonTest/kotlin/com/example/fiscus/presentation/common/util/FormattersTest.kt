@@ -1,5 +1,6 @@
 package com.example.fiscus.presentation.common.util
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.YearMonth
 import kotlin.test.Test
@@ -27,6 +28,12 @@ class FormattersTest {
         assertEquals("30 Sep", formatShortDate(LocalDateTime(2026, 9, 30, 9, 0)))
         assertEquals("1 Mei", formatShortDate(LocalDateTime(2026, 5, 1, 9, 0)))
         assertEquals("17 Agu", formatShortDate(LocalDateTime(2026, 8, 17, 9, 0)))
+    }
+
+    @Test
+    fun formatsFullDate() {
+        assertEquals("7 Okt 2026", formatFullDate(LocalDate(2026, 10, 7)))
+        assertEquals("1 Jan 2027", formatFullDate(LocalDate(2027, 1, 1)))
     }
 
     @Test

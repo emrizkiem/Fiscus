@@ -43,6 +43,7 @@ import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
+import com.example.fiscus.presentation.common.component.CategoryChip
 import com.example.fiscus.presentation.common.component.CategoryIcon
 import com.example.fiscus.presentation.common.component.MonthPickerSheet
 import com.example.fiscus.presentation.common.util.formatMonthYear
@@ -200,22 +201,6 @@ private fun CategoryFilterRow(selected: Category?, onSelected: (Category?) -> Un
         items(Category.entries) { category ->
             CategoryChip(category.label, selected == category) { onSelected(category) }
         }
-    }
-}
-
-@Composable
-private fun CategoryChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
     }
 }
 
