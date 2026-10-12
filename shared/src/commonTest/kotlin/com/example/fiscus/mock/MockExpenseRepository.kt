@@ -20,4 +20,14 @@ class MockExpenseRepository(initial: List<Expense> = emptyList()) : ExpenseRepos
     override suspend fun addExpense(expense: Expense) {
         expenses.update { it + expense }
     }
+
+    override suspend fun getExpenseById(id: String): Expense? = expenses.value.find { it.id == id }
+
+    override suspend fun updateExpense(expense: Expense) {
+        expenses.update { all -> all.map { if (it.id == expense.id) expense else it } }
+    }
+
+    override suspend fun deleteExpense(id: String) {
+        expenses.update { all -> all.filterNot { it.id == id } }
+    }
 }

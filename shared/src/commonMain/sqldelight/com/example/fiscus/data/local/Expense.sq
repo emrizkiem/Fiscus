@@ -24,3 +24,23 @@ ORDER BY date DESC;
 insert:
 INSERT INTO expenseEntity(id, amount, merchant, category, date, note, source, receiptImagePath)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectById:
+SELECT *
+FROM expenseEntity
+WHERE id = ?;
+
+update:
+UPDATE expenseEntity
+SET amount = ?,
+    merchant = ?,
+    category = ?,
+    date = ?,
+    note = ?,
+    source = ?,
+    receiptImagePath = ?
+WHERE id = ?;
+
+deleteById:
+DELETE FROM expenseEntity
+WHERE id = ?;

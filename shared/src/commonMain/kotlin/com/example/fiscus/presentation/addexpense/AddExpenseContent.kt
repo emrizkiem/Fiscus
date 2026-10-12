@@ -72,14 +72,19 @@ fun AddExpenseContent(
     onCategorySelected: (Category) -> Unit,
     onDateSelected: (LocalDate) -> Unit,
     onNoteChange: (String) -> Unit,
-    onSave: () -> Unit,
+    onSave: () -> Unit
 ) {
     var showDatePicker by rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Tambah pengeluaran", style = MaterialTheme.typography.titleMedium) },
+                title = {
+                    Text(
+                        if (state.isEditMode) "Edit pengeluaran" else "Tambah pengeluaran",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(painterResource(Res.drawable.ic_arrow_back), contentDescription = "Kembali")
@@ -97,7 +102,7 @@ fun AddExpenseContent(
                     .navigationBarsPadding()
                     .imePadding()
                     .padding(16.dp)
-                    .height(44.dp),
+                    .height(44.dp)
             ) {
                 Text("Simpan", style = MaterialTheme.typography.labelLarge)
             }
@@ -109,12 +114,12 @@ fun AddExpenseContent(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             AmountField(
                 digits = state.amountDigits,
                 showError = state.showAmountError,
-                onChange = onAmountChange,
+                onChange = onAmountChange
             )
             FormField(label = "Merchant") {
                 OutlinedTextField(
@@ -124,7 +129,7 @@ fun AddExpenseContent(
                     singleLine = true,
                     shape = MaterialTheme.shapes.medium,
                     colors = fieldColors(),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
             FormField(label = "Kategori", error = if (state.showCategoryError) "Pilih kategori dulu" else null) {
@@ -133,7 +138,7 @@ fun AddExpenseContent(
                         CategoryChip(
                             label = category.label,
                             selected = state.category == category,
-                            onClick = { onCategorySelected(category) },
+                            onClick = { onCategorySelected(category) }
                         )
                     }
                 }
@@ -148,7 +153,7 @@ fun AddExpenseContent(
                     placeholder = { Text("Opsional") },
                     shape = MaterialTheme.shapes.medium,
                     colors = fieldColors(),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -162,7 +167,7 @@ fun AddExpenseContent(
                 onDateSelected(date)
                 showDatePicker = false
             },
-            onDismiss = { showDatePicker = false },
+            onDismiss = { showDatePicker = false }
         )
     }
 }
@@ -206,7 +211,7 @@ private fun AmountField(digits: String, showError: Boolean, onChange: (String) -
                     Spacer(Modifier.height(8.dp))
                     HorizontalDivider(thickness = if (isFocused || showError) 2.dp else 1.dp, color = lineColor)
                 }
-            },
+            }
         )
         if (showError) {
             Spacer(Modifier.height(6.dp))
@@ -232,7 +237,7 @@ private fun DateRow(text: String, onClick: () -> Unit) {
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -244,7 +249,7 @@ private fun DateRow(text: String, onClick: () -> Unit) {
                 painterResource(Res.drawable.ic_calendar),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(20.dp)
             )
         }
     }
@@ -256,7 +261,7 @@ private fun ExpenseDatePickerDialog(
     selected: LocalDate,
     today: LocalDate,
     onConfirm: (LocalDate) -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: () -> Unit
 ) {
     val todayMillis = today.toEpochMillis()
     val pickerState = rememberDatePickerState(
@@ -285,7 +290,7 @@ private fun ExpenseDatePickerDialog(
 @Composable
 private fun fieldColors() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = MaterialTheme.colorScheme.primary,
-    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
 )
 
 private fun LocalDate.toEpochMillis(): Long = atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()

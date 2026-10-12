@@ -1,6 +1,7 @@
 package com.example.fiscus.di
 
 import com.example.fiscus.presentation.addexpense.AddExpenseScreenModel
+import com.example.fiscus.presentation.common.util.ExpenseAddedEvents
 import com.example.fiscus.presentation.common.util.SnackbarMessenger
 import com.example.fiscus.presentation.expenselist.ExpenseListScreenModel
 import kotlinx.datetime.TimeZone
@@ -11,9 +12,15 @@ import kotlin.time.Clock
 
 val presentationModule = module {
     single { SnackbarMessenger() }
+    single { ExpenseAddedEvents() }
     factory { ExpenseListScreenModel(repository = get(), currentMonth = currentYearMonth()) }
-    factory {
-        AddExpenseScreenModel(repository = get(), clock = Clock.System, timeZone = TimeZone.currentSystemDefault())
+    factory { params ->
+        AddExpenseScreenModel(
+            repository = get(),
+            clock = Clock.System,
+            timeZone = TimeZone.currentSystemDefault(),
+            expenseId = params.getOrNull()
+        )
     }
 }
 

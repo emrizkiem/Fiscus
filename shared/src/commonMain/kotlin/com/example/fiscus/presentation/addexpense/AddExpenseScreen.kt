@@ -8,20 +8,24 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import com.example.fiscus.presentation.common.util.ExpenseAddedEvents
 import com.example.fiscus.presentation.common.util.SnackbarMessenger
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
-class AddExpenseScreen : Screen {
+class AddExpenseScreen(private val expenseId: String? = null) : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val screenModel = koinScreenModel<AddExpenseScreenModel>()
+        val screenModel = koinScreenModel<AddExpenseScreenModel> { parametersOf(expenseId) }
         val snackbarMessenger = koinInject<SnackbarMessenger>()
+        val expenseAddedEvents = koinInject<ExpenseAddedEvents>()
         val state by screenModel.state.collectAsState()
 
         LaunchedEffect(state.isSaved) {
             if (state.isSaved) {
-                snackbarMessenger.show("Pengeluaran disimpan")
+                snackbarMessenger.show(if (state.isEditMode) "Perubahan disimpan" else "Pengeluaran disimpan")
+                if (!state.isEditMode) expenseAddedEvents.notifyAdded()
                 navigator.pop()
             }
         }
@@ -34,7 +38,7 @@ class AddExpenseScreen : Screen {
             onCategorySelected = screenModel::onCategorySelected,
             onDateSelected = screenModel::onDateSelected,
             onNoteChange = screenModel::onNoteChange,
-            onSave = screenModel::save,
+            onSave = screenModel::save
         )
     }
 }

@@ -35,18 +35,18 @@ fun FiscusBottomBar(
     currentTab: Tab,
     isAddActive: Boolean,
     onTabSelected: (Tab) -> Unit,
-    onAddClick: () -> Unit,
+    onAddClick: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.surface)
-            .windowInsetsPadding(WindowInsets.navigationBars),
+            .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             TabItem(leftTab, selected = currentTab == leftTab, onClick = { onTabSelected(leftTab) })
             AddButton(active = isAddActive, onClick = onAddClick)
@@ -71,7 +71,7 @@ private fun AddButton(active: Boolean, onClick: () -> Unit) {
             painterResource(Res.drawable.ic_add_circle),
             contentDescription = "Tambah pengeluaran",
             tint = color,
-            modifier = Modifier.size(24.dp),
+            modifier = Modifier.size(24.dp)
         )
     }
 }
@@ -85,7 +85,7 @@ private fun BarItem(
 ) {
     Column(
         modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon() }
         Spacer(Modifier.height(2.dp))
