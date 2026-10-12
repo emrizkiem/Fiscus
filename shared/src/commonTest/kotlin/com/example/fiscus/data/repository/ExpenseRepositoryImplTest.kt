@@ -4,6 +4,8 @@ import app.cash.sqldelight.db.SqlDriver
 import com.example.fiscus.data.local.createFiscusDatabase
 import com.example.fiscus.data.local.createInMemoryDriver
 import com.example.fiscus.domain.model.Category
+import com.example.fiscus.domain.model.MonthTotal
+import com.example.fiscus.domain.model.CategoryTotal
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -238,6 +240,71 @@ class ExpenseRepositoryImplTest {
 
         assertEquals(listOf(1, 0), emissions.map { it.size })
     }
+
+    @Test
+    fun categoryTotalsAreGroupedAndSortedLargestFirst() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense("a", LocalDateTime(2026, 10, 1, 9, 0), Category.FOOD, 25_000))
+        repository.addExpense(expense("b", LocalDateTime(2026, 10, 2, 9, 0), Category.SHOPPING, 62_500))
+        repository.addExpense(expense("c", LocalDateTime(2026, 10, 3, 9, 0), Category.FOOD, 28_000))
+        repository.addExpense(expense("d", LocalDateTime(2026, 10, 4, 9, 0), Category.SHOPPING, 100_000))
+        repository.addExpense(expense("e", LocalDateTime(2026, 9, 30, 9, 0), Category.BILLS, 500_000))
+
+        val result = repository.getCategoryTotals(YearMonth(2026, 10)).first()
+
+        assertEquals(
+            listOf(CategoryTotal(Category.SHOPPING, 162_500), CategoryTotal(Category.FOOD, 53_000)),
+            result,
+        )
+    }
+
+    @Test
+    fun categoryTotalsAreEmptyForMonthWithoutExpenses() = runTest {
+        val repository = createRepository()
+
+        assertTrue(repository.getCategoryTotals(YearMonth(2026, 10)).first().isEmpty())
+    }
+
+    @Test
+    fun monthlyTotalsFillMissingMonthsWithZero() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense("jun", LocalDateTime(2026, 6, 15, 9, 0), Category.FOOD, 120_000))
+        repository.addExpense(expense("sep-1", LocalDateTime(2026, 9, 1, 9, 0), Category.FOOD, 50_000))
+        repository.addExpense(expense("sep-2", LocalDateTime(2026, 9, 30, 23, 59, 59), Category.FOOD, 35_000))
+        repository.addExpense(expense("okt", LocalDateTime(2026, 10, 8, 9, 0), Category.FOOD, 485_000))
+        repository.addExpense(expense("mei", LocalDateTime(2026, 5, 31, 9, 0), Category.FOOD, 999_000))
+
+        val result = repository.getMonthlyTotals(endMonth = YearMonth(2026, 10), count = 5).first()
+
+        assertEquals(
+            listOf(
+                MonthTotal(YearMonth(2026, 6), 120_000),
+                MonthTotal(YearMonth(2026, 7), 0),
+                MonthTotal(YearMonth(2026, 8), 0),
+                MonthTotal(YearMonth(2026, 9), 85_000),
+                MonthTotal(YearMonth(2026, 10), 485_000),
+            ),
+            result,
+        )
+    }
+
+    @Test
+    fun monthlyTotalsCrossYearBoundary() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense("des", LocalDateTime(2025, 12, 20, 9, 0), Category.FOOD, 70_000))
+        repository.addExpense(expense("feb", LocalDateTime(2026, 2, 3, 9, 0), Category.FOOD, 40_000))
+
+        val result = repository.getMonthlyTotals(endMonth = YearMonth(2026, 2), count = 5).first()
+
+        assertEquals(
+            listOf(YearMonth(2025, 10), YearMonth(2025, 11), YearMonth(2025, 12), YearMonth(2026, 1), YearMonth(2026, 2)),
+            result.map { it.month },
+        )
+        assertEquals(listOf(0L, 0L, 70_000L, 0L, 40_000L), result.map { it.total })
+    }
+
+    private fun expense(id: String, date: LocalDateTime, category: Category, amount: Long) =
+        expense(id, date).copy(category = category, amount = amount)
 
     private fun expense(id: String, date: LocalDateTime) = Expense(
         id = id,

@@ -2,8 +2,10 @@ package com.example.fiscus.di
 
 import com.example.fiscus.presentation.addexpense.AddExpenseScreenModel
 import com.example.fiscus.presentation.common.util.ExpenseAddedEvents
+import com.example.fiscus.presentation.common.util.SelectedMonthStore
 import com.example.fiscus.presentation.common.util.SnackbarMessenger
 import com.example.fiscus.presentation.expenselist.ExpenseListScreenModel
+import com.example.fiscus.presentation.summary.SummaryScreenModel
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.todayIn
@@ -13,7 +15,8 @@ import kotlin.time.Clock
 val presentationModule = module {
     single { SnackbarMessenger() }
     single { ExpenseAddedEvents() }
-    factory { ExpenseListScreenModel(repository = get(), currentMonth = currentYearMonth()) }
+    single { SelectedMonthStore(initialMonth = currentYearMonth()) }
+    factory { ExpenseListScreenModel(repository = get(), currentMonth = currentYearMonth(), monthStore = get()) }
     factory { params ->
         AddExpenseScreenModel(
             repository = get(),
@@ -22,6 +25,7 @@ val presentationModule = module {
             expenseId = params.getOrNull()
         )
     }
+    factory { SummaryScreenModel(repository = get(), currentMonth = currentYearMonth(), monthStore = get()) }
 }
 
 private fun currentYearMonth(): YearMonth {
