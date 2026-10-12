@@ -19,6 +19,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class ExpenseRepositoryImplTest {
@@ -147,6 +148,95 @@ class ExpenseRepositoryImplTest {
         runCurrent()
 
         assertEquals(listOf(0, 1), emissions.map { it.size })
+    }
+
+    @Test
+    fun getExpenseByIdReturnsSavedExpense() = runTest {
+        val repository = createRepository()
+        val saved = expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0))
+        repository.addExpense(saved)
+
+        assertEquals(saved, repository.getExpenseById("a"))
+    }
+
+    @Test
+    fun getExpenseByIdReturnsNullWhenMissing() = runTest {
+        val repository = createRepository()
+
+        assertNull(repository.getExpenseById("missing"))
+    }
+
+    @Test
+    fun updateExpenseReplacesAllFieldsExceptId() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0)))
+        val updated = Expense(
+            id = "a",
+            amount = 75_000,
+            merchant = "Bakso Pak Eko",
+            category = Category.FOOD,
+            date = LocalDateTime(2026, 10, 5, 12, 30),
+            note = "Makan siang",
+            source = ExpenseSource.MANUAL,
+            receiptImagePath = null,
+        )
+
+        repository.updateExpense(updated)
+
+        assertEquals(listOf(updated), repository.getExpensesByMonth(YearMonth(2026, 10)).first())
+    }
+
+    @Test
+    fun updateExpenseCanMoveExpenseToAnotherMonth() = runTest {
+        val repository = createRepository()
+        val original = expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0))
+        repository.addExpense(original)
+
+        repository.updateExpense(original.copy(date = LocalDateTime(2026, 9, 30, 9, 0)))
+
+        assertTrue(repository.getExpensesByMonth(YearMonth(2026, 10)).first().isEmpty())
+        assertEquals(listOf("a"), repository.getExpensesByMonth(YearMonth(2026, 9)).first().map { it.id })
+    }
+
+    @Test
+    fun deleteExpenseRemovesOnlyThatExpense() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0)))
+        repository.addExpense(expense(id = "b", date = LocalDateTime(2026, 10, 7, 9, 0)))
+
+        repository.deleteExpense("a")
+
+        assertEquals(listOf("b"), repository.getExpensesByMonth(YearMonth(2026, 10)).first().map { it.id })
+        assertNull(repository.getExpenseById("a"))
+    }
+
+    @Test
+    fun deletedExpenseCanBeRestoredWithSameId() = runTest {
+        val repository = createRepository()
+        val original = expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0))
+        repository.addExpense(original)
+
+        repository.deleteExpense("a")
+        repository.addExpense(original)
+
+        assertEquals(original, repository.getExpenseById("a"))
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun flowEmitsAgainAfterExpenseIsDeleted() = runTest {
+        val repository = createRepository()
+        repository.addExpense(expense(id = "a", date = LocalDateTime(2026, 10, 8, 9, 0)))
+        val emissions = mutableListOf<List<Expense>>()
+        backgroundScope.launch {
+            repository.getExpensesByMonth(YearMonth(2026, 10)).collect { emissions += it }
+        }
+        runCurrent()
+
+        repository.deleteExpense("a")
+        runCurrent()
+
+        assertEquals(listOf(1, 0), emissions.map { it.size })
     }
 
     private fun expense(id: String, date: LocalDateTime) = Expense(

@@ -1,6 +1,7 @@
 package com.example.fiscus.presentation.addexpense
 
 import com.example.fiscus.domain.model.Category
+import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
 import com.example.fiscus.mock.MockExpenseRepository
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +44,8 @@ class AddExpenseScreenModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createScreenModel() = AddExpenseScreenModel(repository, fixedClock, TimeZone.UTC)
+    private fun createScreenModel(expenseId: String? = null) =
+        AddExpenseScreenModel(repository, fixedClock, TimeZone.UTC, expenseId)
 
     private suspend fun savedExpenses() = repository.getExpensesByMonth(YearMonth(2026, 10)).first()
 
@@ -155,5 +157,62 @@ class AddExpenseScreenModelTest {
         screenModel.save()
 
         assertEquals(1, savedExpenses().size)
+    }
+
+    private val existing = Expense(
+        id = "existing",
+        amount = 62_500,
+        merchant = "Indomaret",
+        category = Category.SHOPPING,
+        date = LocalDateTime(2026, 10, 7, 19, 45, 0),
+        note = null,
+        source = ExpenseSource.OCR_GALLERY,
+        receiptImagePath = "/receipts/a.jpg",
+    )
+
+    @Test
+    fun editModeLoadsExistingExpenseIntoForm() = runTest {
+        repository.addExpense(existing)
+
+        val state = createScreenModel(expenseId = "existing").state.value
+
+        assertTrue(state.isEditMode)
+        assertEquals("62500", state.amountDigits)
+        assertEquals("Indomaret", state.merchant)
+        assertEquals(Category.SHOPPING, state.category)
+        assertEquals(LocalDate(2026, 10, 7), state.date)
+        assertEquals("", state.note)
+    }
+
+    @Test
+    fun editSaveUpdatesInsteadOfAddingAndKeepsUneditedFields() = runTest {
+        repository.addExpense(existing)
+        val screenModel = createScreenModel(expenseId = "existing")
+
+        screenModel.onAmountChange("70000")
+        screenModel.onCategorySelected(Category.FOOD)
+        screenModel.onDateSelected(LocalDate(2026, 10, 5))
+        screenModel.save()
+
+        val saved = savedExpenses().single()
+        assertEquals("existing", saved.id)
+        assertEquals(70_000, saved.amount)
+        assertEquals(Category.FOOD, saved.category)
+        assertEquals(LocalDateTime(2026, 10, 5, 19, 45, 0), saved.date)
+        assertEquals(ExpenseSource.OCR_GALLERY, saved.source)
+        assertEquals("/receipts/a.jpg", saved.receiptImagePath)
+        assertTrue(screenModel.state.value.isSaved)
+    }
+
+    @Test
+    fun editModeForMissingExpenseDoesNotSave() = runTest {
+        val screenModel = createScreenModel(expenseId = "missing")
+
+        screenModel.onAmountChange("10000")
+        screenModel.onCategorySelected(Category.OTHER)
+        screenModel.save()
+
+        assertTrue(savedExpenses().isEmpty())
+        assertFalse(screenModel.state.value.isSaved)
     }
 }

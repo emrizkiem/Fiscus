@@ -5,6 +5,7 @@ import kotlinx.datetime.LocalDate
 
 data class AddExpenseState(
     val today: LocalDate,
+    val isEditMode: Boolean = false,
     val date: LocalDate = today,
     val amountDigits: String = "",
     val merchant: String = "",
@@ -13,5 +14,5 @@ data class AddExpenseState(
     val showAmountError: Boolean = false,
     val showCategoryError: Boolean = false,
     val isSaving: Boolean = false,
-    val isSaved: Boolean = false,
+    val isSaved: Boolean = false
 )

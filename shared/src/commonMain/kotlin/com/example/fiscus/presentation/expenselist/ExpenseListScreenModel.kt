@@ -3,6 +3,7 @@ package com.example.fiscus.presentation.expenselist
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
 import com.example.fiscus.domain.model.Category
+import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.repository.ExpenseRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,11 +13,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.datetime.YearMonth
 
 class ExpenseListScreenModel(
     private val repository: ExpenseRepository,
-    private val currentMonth: YearMonth,
+    private val currentMonth: YearMonth
 ) : ScreenModel {
     private val selectedMonth = MutableStateFlow(currentMonth)
     private val selectedCategory = MutableStateFlow<Category?>(null)
@@ -35,12 +37,12 @@ class ExpenseListScreenModel(
                 monthTotal = expenses.sumOf { it.amount },
                 monthTransactionCount = expenses.size,
                 expenses = if (category == null) expenses else expenses.filter { it.category == category },
-                isLoading = false,
+                isLoading = false
             )
         }.stateIn(
             scope = screenModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ExpenseListState(currentMonth = currentMonth, selectedMonth = currentMonth),
+            initialValue = ExpenseListState(currentMonth = currentMonth, selectedMonth = currentMonth)
         )
 
     fun selectMonth(month: YearMonth) {
@@ -49,5 +51,13 @@ class ExpenseListScreenModel(
 
     fun selectCategory(category: Category?) {
         selectedCategory.value = category
+    }
+
+    fun deleteExpense(expense: Expense) {
+        screenModelScope.launch { repository.deleteExpense(expense.id) }
+    }
+
+    fun restoreExpense(expense: Expense) {
+        screenModelScope.launch { repository.addExpense(expense) }
     }
 }

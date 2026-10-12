@@ -3,8 +3,10 @@ package com.example.fiscus.presentation.navigation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -22,9 +24,11 @@ import com.example.fiscus.presentation.addexpense.AddExpenseScreen
 import com.example.fiscus.presentation.common.component.AddExpenseOption
 import com.example.fiscus.presentation.common.component.AddExpenseSheet
 import com.example.fiscus.presentation.common.component.FiscusSnackbar
+import com.example.fiscus.presentation.common.util.ExpenseAddedEvents
 import com.example.fiscus.presentation.common.util.SnackbarMessenger
 import com.example.fiscus.presentation.expenselist.ExpenseListTab
 import com.example.fiscus.presentation.summary.SummaryTab
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
 class MainScreen : Screen {
@@ -33,13 +37,27 @@ class MainScreen : Screen {
         val navigator = LocalNavigator.currentOrThrow
         var showAddSheet by rememberSaveable { mutableStateOf(false) }
         val snackbarMessenger = koinInject<SnackbarMessenger>()
+        val expenseAddedEvents = koinInject<ExpenseAddedEvents>()
         val snackbarHostState = remember { SnackbarHostState() }
 
         LaunchedEffect(snackbarMessenger) {
-            snackbarMessenger.messages.collect { snackbarHostState.showSnackbar(it) }
+            snackbarMessenger.messages.collect { message ->
+                snackbarHostState.currentSnackbarData?.dismiss()
+                this@LaunchedEffect.launch {
+                    val result = snackbarHostState.showSnackbar(
+                        message = message.text,
+                        actionLabel = message.actionLabel,
+                        duration = SnackbarDuration.Short
+                    )
+                    if (result == SnackbarResult.ActionPerformed) message.onAction?.invoke()
+                }
+            }
         }
 
         TabNavigator(ExpenseListTab) { tabNavigator ->
+            LaunchedEffect(expenseAddedEvents) {
+                expenseAddedEvents.events.collect { tabNavigator.current = ExpenseListTab }
+            }
             Scaffold(
                 snackbarHost = {
                     SnackbarHost(snackbarHostState) { data -> FiscusSnackbar(data) }
@@ -51,7 +69,7 @@ class MainScreen : Screen {
                         currentTab = tabNavigator.current,
                         isAddActive = showAddSheet,
                         onTabSelected = { tabNavigator.current = it },
-                        onAddClick = { showAddSheet = true },
+                        onAddClick = { showAddSheet = true }
                     )
                 },
             ) { padding ->

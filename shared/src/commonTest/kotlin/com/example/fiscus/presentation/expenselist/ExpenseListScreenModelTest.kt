@@ -132,6 +132,30 @@ class ExpenseListScreenModelTest {
         assertEquals(listOf("coffee", "groceries"), state.expenses.map { it.id })
     }
 
+    @Test
+    fun deletingExpenseRemovesItAndUpdatesTotal() = runTest {
+        val screenModel = createScreenModel()
+
+        screenModel.deleteExpense(groceries)
+        val state = screenModel.state.value
+
+        assertEquals(listOf("coffee", "bakso"), state.expenses.map { it.id })
+        assertEquals(53_000, state.monthTotal)
+        assertEquals(2, state.monthTransactionCount)
+    }
+
+    @Test
+    fun restoringDeletedExpenseBringsItBack() = runTest {
+        val screenModel = createScreenModel()
+
+        screenModel.deleteExpense(groceries)
+        screenModel.restoreExpense(groceries)
+        val state = screenModel.state.value
+
+        assertEquals(listOf("coffee", "groceries", "bakso"), state.expenses.map { it.id })
+        assertEquals(115_500, state.monthTotal)
+    }
+
     private fun expense(id: String, amount: Long, category: Category, date: LocalDateTime) = Expense(
         id = id,
         amount = amount,

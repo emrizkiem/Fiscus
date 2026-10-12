@@ -43,6 +43,31 @@ class ExpenseRepositoryImpl(
             )
         }
     }
+
+    override suspend fun getExpenseById(id: String): Expense? = withContext(ioDispatcher) {
+        queries.selectById(id).executeAsOneOrNull()?.toDomain()
+    }
+
+    override suspend fun updateExpense(expense: Expense) {
+        withContext(ioDispatcher) {
+            queries.update(
+                amount = expense.amount,
+                merchant = expense.merchant,
+                category = expense.category,
+                date = expense.date,
+                note = expense.note,
+                source = expense.source,
+                receiptImagePath = expense.receiptImagePath,
+                id = expense.id
+            )
+        }
+    }
+
+    override suspend fun deleteExpense(id: String) {
+        withContext(ioDispatcher) {
+            queries.deleteById(id)
+        }
+    }
 }
 
 private fun ExpenseEntity.toDomain() = Expense(

@@ -11,7 +11,7 @@ data class ExpenseListState(
     val monthTotal: Long = 0,
     val monthTransactionCount: Int = 0,
     val expenses: List<Expense> = emptyList(),
-    val isLoading: Boolean = true,
+    val isLoading: Boolean = true
 ) {
     val isMonthEmpty: Boolean get() = !isLoading && monthTransactionCount == 0
     val isCategoryEmpty: Boolean get() = !isLoading && !isMonthEmpty && expenses.isEmpty()
