@@ -4,6 +4,7 @@ import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
 import com.example.fiscus.mock.MockExpenseRepository
+import com.example.fiscus.presentation.common.util.SelectedMonthStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -44,7 +45,7 @@ class ExpenseListScreenModelTest {
     private fun TestScope.createScreenModel(
         repository: MockExpenseRepository = MockExpenseRepository(listOf(coffee, groceries, bakso, grab)),
     ): ExpenseListScreenModel {
-        val screenModel = ExpenseListScreenModel(repository, currentMonth = october)
+        val screenModel = ExpenseListScreenModel(repository, currentMonth = october, monthStore = SelectedMonthStore(october))
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { screenModel.state.collect {} }
         return screenModel
     }

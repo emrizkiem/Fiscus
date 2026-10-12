@@ -1,6 +1,8 @@
 package com.example.fiscus.domain.repository
 
+import com.example.fiscus.domain.model.CategoryTotal
 import com.example.fiscus.domain.model.Expense
+import com.example.fiscus.domain.model.MonthTotal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.YearMonth
 
@@ -10,4 +12,6 @@ interface ExpenseRepository {
     suspend fun getExpenseById(id: String): Expense?
     suspend fun updateExpense(expense: Expense)
     suspend fun deleteExpense(id: String)
+    fun getCategoryTotals(yearMonth: YearMonth): Flow<List<CategoryTotal>>
+    fun getMonthlyTotals(endMonth: YearMonth, count: Int): Flow<List<MonthTotal>>
 }

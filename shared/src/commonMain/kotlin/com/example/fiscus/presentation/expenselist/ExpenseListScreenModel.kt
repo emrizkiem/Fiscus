@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.repository.ExpenseRepository
+import com.example.fiscus.presentation.common.util.SelectedMonthStore
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,13 +19,13 @@ import kotlinx.datetime.YearMonth
 
 class ExpenseListScreenModel(
     private val repository: ExpenseRepository,
-    private val currentMonth: YearMonth
+    private val currentMonth: YearMonth,
+    private val monthStore: SelectedMonthStore,
 ) : ScreenModel {
-    private val selectedMonth = MutableStateFlow(currentMonth)
     private val selectedCategory = MutableStateFlow<Category?>(null)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val monthExpenses = selectedMonth.flatMapLatest { month ->
+    private val monthExpenses = monthStore.selectedMonth.flatMapLatest { month ->
         repository.getExpensesByMonth(month).map { expenses -> month to expenses }
     }
 
@@ -42,11 +43,11 @@ class ExpenseListScreenModel(
         }.stateIn(
             scope = screenModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = ExpenseListState(currentMonth = currentMonth, selectedMonth = currentMonth)
+            initialValue = ExpenseListState(currentMonth = currentMonth, selectedMonth = monthStore.selectedMonth.value)
         )
 
     fun selectMonth(month: YearMonth) {
-        selectedMonth.value = month
+        monthStore.select(month)
     }
 
     fun selectCategory(category: Category?) {

@@ -4,7 +4,9 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.example.fiscus.data.local.ExpenseEntity
 import com.example.fiscus.data.local.FiscusDatabase
+import com.example.fiscus.domain.model.CategoryTotal
 import com.example.fiscus.domain.model.Expense
+import com.example.fiscus.domain.model.MonthTotal
 import com.example.fiscus.domain.repository.ExpenseRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
@@ -12,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.YearMonth
 import kotlinx.datetime.atTime
+import kotlinx.datetime.minusMonth
 import kotlinx.datetime.plusMonth
 
 class ExpenseRepositoryImpl(
@@ -68,7 +71,29 @@ class ExpenseRepositoryImpl(
             queries.deleteById(id)
         }
     }
+
+    override fun getCategoryTotals(yearMonth: YearMonth): Flow<List<CategoryTotal>> =
+        queries.selectCategoryTotals(yearMonth.startDateTime(), yearMonth.plusMonth().startDateTime())
+            .asFlow()
+            .mapToList(ioDispatcher)
+            .map { rows -> rows.map { CategoryTotal(category = it.category, total = it.total ?: 0L) } }
+
+    override fun getMonthlyTotals(
+        endMonth: YearMonth,
+        count: Int
+    ): Flow<List<MonthTotal>> {
+        val months = generateSequence(endMonth) { it.minusMonth() }.take(count).toList().reversed()
+        return queries.selectMonthlyTotals(months.first().startDateTime(), endMonth.plusMonth().startDateTime())
+            .asFlow()
+            .mapToList(ioDispatcher)
+            .map { rows ->
+                val totalsByMonth = rows.associate { it.month to (it.total ?: 0L) }
+                months.map { month -> MonthTotal(month = month, total = totalsByMonth[month.toString()] ?: 0L) }
+            }
+    }
 }
+
+private fun YearMonth.startDateTime() = firstDay.atTime(0, 0)
 
 private fun ExpenseEntity.toDomain() = Expense(
     id = id,

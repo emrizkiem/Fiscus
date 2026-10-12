@@ -44,3 +44,17 @@ WHERE id = ?;
 deleteById:
 DELETE FROM expenseEntity
 WHERE id = ?;
+
+selectCategoryTotals:
+SELECT category, SUM(amount) AS total
+FROM expenseEntity
+WHERE date >= :start AND date < :end
+GROUP BY category
+ORDER BY total DESC;
+
+selectMonthlyTotals:
+SELECT substr(date, 1, 7) AS month, SUM(amount) AS total
+FROM expenseEntity
+WHERE date >= :start AND date < :end
+GROUP BY month
+ORDER BY month;
