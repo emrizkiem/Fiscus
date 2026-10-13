@@ -15,10 +15,11 @@ object ReceiptParser {
     private val amountPattern = Regex("""(?i)(?:(?:rp\.?|idr)\s*)?\d[\d.,]*\d|\d""")
 
     private val totalKeywords = listOf(
-        "total belanja", "grand total", "total bayar", "total pembayaran", "total tagihan", "jumlah bayar", "total",
+        "total belanja", "grand total", "total bayar", "total pembayaran", "total tagihan", "jumlah bayar", "jml bayar", "total",
     )
     private val ignoredTotalWords = listOf("item", "disc", "diskon", "qty", "hemat", "poin")
-    private val fallbackKeywords = listOf("nominal", "jumlah")
+    private val fallbackKeywords = listOf("nominal", "jumlah", "jml")
+    private val feeKeywords = listOf("biaya admin", "admin bank", "biaya transfer", "biaya layanan")
     private val numericDate = Regex("""\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})\b""")
     private val numericDateShortYear = Regex("""\b(\d{1,2})[-/.](\d{1,2})[-/.](\d{2})\b""")
     private val namedDate = Regex("""\b(\d{1,2})[\s-]+([A-Za-z]{3,9})[\s-]+(\d{4})\b""")
@@ -29,12 +30,48 @@ object ReceiptParser {
         "okt" to 10, "oct" to 10, "nov" to 11, "des" to 12, "dec" to 12,
     )
     private val merchantLabels = listOf("penerima", "merchant", "nama toko", "tujuan", "kepada")
-    private val knownMerchants = listOf(
-        "Indomaret", "Alfamart", "Alfamidi", "Lawson", "Circle K", "FamilyMart", "Superindo",
-        "Hypermart", "Transmart", "Lotte Mart", "Starbucks", "Kopi Kenangan", "Janji Jiwa",
-        "Fore Coffee", "Chatime", "McDonald's", "KFC", "Burger King", "Pizza Hut", "Gojek", "Grab",
-        "Shopee", "Tokopedia", "Guardian", "Watsons", "Kimia Farma",
-    ).map { name -> name to Regex("""\b${Regex.escape(name)}\b""", RegexOption.IGNORE_CASE) }
+    private val knownMerchants = brandPatterns(
+        "Indomaret" to listOf("indomaret", "klikindomaret"),
+        "Alfamart" to listOf("alfamart", "alfagift"),
+        "Alfamidi" to listOf("alfamidi"),
+        "Lawson" to listOf("lawson"),
+        "Circle K" to listOf("circle k"),
+        "FamilyMart" to listOf("familymart"),
+        "Superindo" to listOf("superindo"),
+        "Hypermart" to listOf("hypermart"),
+        "Transmart" to listOf("transmart"),
+        "Lotte Mart" to listOf("lotte mart"),
+        "Starbucks" to listOf("starbucks"),
+        "Kopi Kenangan" to listOf("kopi kenangan"),
+        "Janji Jiwa" to listOf("janji jiwa"),
+        "Fore Coffee" to listOf("fore coffee"),
+        "Chatime" to listOf("chatime"),
+        "McDonald's" to listOf("mcdonald's", "mcdonalds"),
+        "KFC" to listOf("kfc"),
+        "Burger King" to listOf("burger king"),
+        "Pizza Hut" to listOf("pizza hut"),
+        "Gojek" to listOf("gojek"),
+        "Grab" to listOf("grab"),
+        "Shopee" to listOf("shopee"),
+        "Tokopedia" to listOf("tokopedia"),
+        "Guardian" to listOf("guardian"),
+        "Watsons" to listOf("watsons"),
+        "Kimia Farma" to listOf("kimia farma"),
+    )
+
+    private val knownIssuers = brandPatterns(
+        "BCA" to listOf("bca", "klikbca"),
+        "Bank Mandiri" to listOf("bank mandiri", "livin"),
+        "BRI" to listOf("bri", "brimo"),
+        "BNI" to listOf("bni"),
+        "Bank Sinarmas" to listOf("sinarmas"),
+        "CIMB Niaga" to listOf("cimb"),
+        "BSI" to listOf("bsi", "bank syariah indonesia"),
+        "GoPay" to listOf("gopay", "go-pay"),
+        "OVO" to listOf("ovo"),
+        "ShopeePay" to listOf("shopeepay"),
+    )
+    private const val HEADER_LINE_COUNT = 3
 
     private val nonMerchantPrefixes = listOf("transfer", "pembayaran", "bukti", "struk", "npwp", "bon", "tgl", "tanggal", "kasir")
 
@@ -61,10 +98,15 @@ object ReceiptParser {
         for (keyword in fallbackKeywords) {
             lines.firstNotNullOfOrNull { line ->
                 if (keyword in line.lowercase()) lastAmountIn(line) else null
-            }?.let { return it }
+            }?.let { base -> return base + adminFee(lines) }
         }
         return null
     }
+
+    private fun adminFee(lines: List<String>): Long =
+        lines.firstNotNullOfOrNull { line ->
+            if (feeKeywords.any { it in line.lowercase() }) lastAmountIn(line) else null
+        } ?: 0L
 
     fun parseDate(lines: List<String>): LocalDate? {
         val labelled = lines.filter { line -> dateLabels.any { it in line.lowercase() } }
@@ -77,12 +119,21 @@ object ReceiptParser {
             line.drop(label.length).trim().removePrefix(":").trim().ifEmpty { null }
         }?.let { return it }
 
-        lines.firstNotNullOfOrNull { line ->
-            knownMerchants.firstOrNull { (_, pattern) -> pattern.containsMatchIn(line) }?.first
-        }?.let { return it }
+        findBrand(lines, knownMerchants)?.let { return it }
+        findBrand(lines.take(HEADER_LINE_COUNT), knownIssuers)?.let { return it }
 
         return lines.firstOrNull { looksLikeName(it) }?.trim()
     }
+
+    private fun findBrand(lines: List<String>, brands: List<Pair<String, List<Regex>>>): String? =
+        lines.firstNotNullOfOrNull { line ->
+            brands.firstOrNull { (_, patterns) -> patterns.any { it.containsMatchIn(line) } }?.first
+        }
+
+    private fun brandPatterns(vararg brands: Pair<String, List<String>>): List<Pair<String, List<Regex>>> =
+        brands.map { (name, aliases) ->
+            name to aliases.map { alias -> Regex("""\b${Regex.escape(alias)}\b""", RegexOption.IGNORE_CASE) }
+        }
 
     private fun lastAmountIn(line: String): Long? =
         amountPattern.findAll(line).mapNotNull { parseRupiah(it.value) }.lastOrNull()
