@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
+import com.example.fiscus.domain.receipt.ReceiptReader
 import com.example.fiscus.domain.repository.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,9 +27,13 @@ class AddExpenseScreenModel(
     private val repository: ExpenseRepository,
     private val clock: Clock,
     private val timeZone: TimeZone,
-    expenseId: String? = null
+    private val receiptReader: ReceiptReader,
+    expenseId: String? = null,
+    receiptImage: ByteArray? = null,
 ) : ScreenModel {
-    private val _state = MutableStateFlow(AddExpenseState(today = now().date, isEditMode = expenseId != null))
+    private val _state = MutableStateFlow(
+        AddExpenseState(today = now().date, isEditMode = expenseId != null, receiptImage = receiptImage),
+    )
     val state: StateFlow<AddExpenseState> = _state.asStateFlow()
 
     private var original: Expense? = null
@@ -47,6 +52,22 @@ class AddExpenseScreenModel(
                         note = expense.note.orEmpty()
                     )
                 }
+            }
+        }
+        if (receiptImage != null) readReceipt(receiptImage)
+    }
+
+    private fun readReceipt(imageBytes: ByteArray) {
+        _state.update { it.copy(isReadingReceipt = true) }
+        screenModelScope.launch {
+            val result = runCatching { receiptReader.read(imageBytes) }.getOrNull()
+            _state.update { current ->
+                current.copy(
+                    amountDigits = result?.amount?.takeIf { it > 0 }?.toString() ?: current.amountDigits,
+                    merchant = result?.merchant ?: current.merchant,
+                    date = result?.date?.let { minOf(it, current.today) } ?: current.date,
+                    isReadingReceipt = false,
+                )
             }
         }
     }
@@ -75,7 +96,7 @@ class AddExpenseScreenModel(
     @OptIn(ExperimentalUuidApi::class)
     fun save() {
         val current = _state.value
-        if (current.isSaving || current.isSaved) return
+        if (current.isSaving || current.isSaved || current.isReadingReceipt) return
         val editing = original
         if (current.isEditMode && editing == null) return
 
@@ -111,7 +132,8 @@ class AddExpenseScreenModel(
                         category = category,
                         date = LocalDateTime(current.date, LocalTime(time.hour, time.minute, time.second)),
                         note = note,
-                        source = ExpenseSource.MANUAL,
+                        source = if (current.isReviewMode) ExpenseSource.OCR_GALLERY else ExpenseSource.MANUAL,
+                        // Gambar struk hanya dipakai selama review, tidak disimpan
                         receiptImagePath = null
                     ),
                 )
