@@ -14,5 +14,9 @@ data class AddExpenseState(
     val showAmountError: Boolean = false,
     val showCategoryError: Boolean = false,
     val isSaving: Boolean = false,
-    val isSaved: Boolean = false
-)
+    val isSaved: Boolean = false,
+    val receiptImage: ByteArray? = null,
+    val isReadingReceipt: Boolean = false
+) {
+    val isReviewMode: Boolean get() = receiptImage != null
+}

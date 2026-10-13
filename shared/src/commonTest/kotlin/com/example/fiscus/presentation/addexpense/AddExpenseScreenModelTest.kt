@@ -3,7 +3,9 @@ package com.example.fiscus.presentation.addexpense
 import com.example.fiscus.domain.model.Category
 import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
+import com.example.fiscus.domain.model.ReceiptScanResult
 import com.example.fiscus.mock.MockExpenseRepository
+import com.example.fiscus.mock.MockReceiptReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -44,8 +46,18 @@ class AddExpenseScreenModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createScreenModel(expenseId: String? = null) =
-        AddExpenseScreenModel(repository, fixedClock, TimeZone.UTC, expenseId)
+    private fun createScreenModel(
+        expenseId: String? = null,
+        receiptImage: ByteArray? = null,
+        receiptReader: MockReceiptReader = MockReceiptReader(),
+    ) = AddExpenseScreenModel(
+        repository = repository,
+        clock = fixedClock,
+        timeZone = TimeZone.UTC,
+        receiptReader = receiptReader,
+        expenseId = expenseId,
+        receiptImage = receiptImage,
+    )
 
     private suspend fun savedExpenses() = repository.getExpensesByMonth(YearMonth(2026, 10)).first()
 
@@ -214,5 +226,74 @@ class AddExpenseScreenModelTest {
 
         assertTrue(savedExpenses().isEmpty())
         assertFalse(screenModel.state.value.isSaved)
+    }
+
+    private val receiptBytes = byteArrayOf(1, 2, 3)
+
+    @Test
+    fun reviewModeFillsFieldsFromReceipt() = runTest {
+        val reader = MockReceiptReader(ReceiptScanResult(amount = 127_600, merchant = "Alfamart", date = LocalDate(2026, 9, 18)))
+
+        val state = createScreenModel(receiptImage = receiptBytes, receiptReader = reader).state.value
+
+        assertTrue(state.isReviewMode)
+        assertFalse(state.isReadingReceipt)
+        assertEquals("127600", state.amountDigits)
+        assertEquals("Alfamart", state.merchant)
+        assertEquals(LocalDate(2026, 9, 18), state.date)
+        assertNull(state.category)
+        assertEquals(1, reader.readCount)
+    }
+
+    @Test
+    fun reviewModeLeavesUnreadFieldsEmptyAndDateToday() = runTest {
+        val state = createScreenModel(receiptImage = receiptBytes).state.value
+
+        assertEquals("", state.amountDigits)
+        assertEquals("", state.merchant)
+        assertEquals(LocalDate(2026, 10, 9), state.date)
+    }
+
+    @Test
+    fun reviewModeClampsFutureReceiptDateToToday() = runTest {
+        val reader = MockReceiptReader(ReceiptScanResult(amount = 10_000, merchant = null, date = LocalDate(2026, 12, 1)))
+
+        val state = createScreenModel(receiptImage = receiptBytes, receiptReader = reader).state.value
+
+        assertEquals(LocalDate(2026, 10, 9), state.date)
+    }
+
+    @Test
+    fun reviewModeSurvivesOcrFailure() = runTest {
+        val state = createScreenModel(receiptImage = receiptBytes, receiptReader = MockReceiptReader(result = null)).state.value
+
+        assertFalse(state.isReadingReceipt)
+        assertEquals("", state.amountDigits)
+    }
+
+    @Test
+    fun savingReviewMarksSourceAsGalleryWithoutKeepingImage() = runTest {
+        val reader = MockReceiptReader(ReceiptScanResult(amount = 127_600, merchant = "Alfamart", date = LocalDate(2026, 9, 18)))
+        val screenModel = createScreenModel(receiptImage = receiptBytes, receiptReader = reader)
+
+        screenModel.onCategorySelected(Category.SHOPPING)
+        screenModel.save()
+
+        val saved = repository.getExpensesByMonth(YearMonth(2026, 9)).first().single()
+        assertEquals(127_600, saved.amount)
+        assertEquals(ExpenseSource.OCR_GALLERY, saved.source)
+        assertNull(saved.receiptImagePath)
+    }
+
+    @Test
+    fun manualSaveIsMarkedAsManual() = runTest {
+        val screenModel = createScreenModel()
+        screenModel.onAmountChange("15000")
+        screenModel.onCategorySelected(Category.OTHER)
+
+        screenModel.save()
+
+        assertNull(savedExpenses().single().receiptImagePath)
+        assertEquals(ExpenseSource.MANUAL, savedExpenses().single().source)
     }
 }
