@@ -244,7 +244,6 @@ class ReceiptParserTest {
 
     @Test
     fun knownBrandIsMatchedAsWholeWordOnly() {
-        // "fore" di dalam "before" bukan merchant Fore
         val lines = listOf("Warung Bu Sri", "Bayar before 10:00")
 
         assertEquals("Warung Bu Sri", ReceiptParser.parseMerchant(lines))
@@ -383,5 +382,39 @@ class ReceiptParserTest {
     @Test
     fun merchantAliasMatchesWebsiteName() {
         assertEquals("Indomaret", ReceiptParser.parseMerchant(listOf("**** ****", "KLIKINDOMARET.COM")))
+    }
+
+    private val marugameUdon = listOf(
+        "BETE JAPANESE NOODLES & TEMPURA MARUGAME",
+        "MARUGAME UDON KUNINGAN CITY",
+        "J1. Prof. DR. Satrio No.18, GF no 11B, RT.14/RW.",
+        "Kuningan, Karet Kuningan, Setia Budi, Kota Jakar",
+        "Telp : 081131133483",
+        "No : R006202609300154",
+        "Sales No : SR006179076865629",
+        "Date : 30-09-2026 18:44",
+        "Time In : 30-09-2026 18:44",
+        "Server : M063 KASIR 1",
+        "Marugame Bolognese Udon",
+        "1x @66.000 66.000",
+        "6 items",
+        "Grand Total : 200.000",
+        "QRIS DISPLAY : 200.000",
+        "Price inclusive of PB1 : 18.182",
+        "Download Marugame Udon App at Play Store or App",
+    )
+
+    @Test
+    fun marugameUdonIsFoundEvenWhenLogoLineIsMerged() {
+        assertEquals(
+            ParsedReceipt(amount = 200_000, merchant = "Marugame Udon", date = LocalDate(2026, 9, 30)),
+            ReceiptParser.parse(marugameUdon),
+        )
+    }
+
+    @Test
+    fun jCoAliasWithDotIsMatchedLiterally() {
+        assertEquals("J.CO", ReceiptParser.parseMerchant(listOf("J.CO DONUTS & COFFEE", "Total 45.000")))
+        assertEquals("Warung Jaco", ReceiptParser.parseMerchant(listOf("Warung Jaco", "Total 45.000")))
     }
 }

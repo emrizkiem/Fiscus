@@ -1,11 +1,15 @@
 package com.example.fiscus.presentation.common.util
 
-class PendingReceipt {
-    private var imageBytes: ByteArray? = null
+import com.example.fiscus.domain.model.ExpenseSource
 
-    fun put(bytes: ByteArray) {
-        imageBytes = bytes
+class ReceiptImage(val bytes: ByteArray, val source: ExpenseSource)
+
+class PendingReceipt {
+    private var pending: ReceiptImage? = null
+
+    fun put(bytes: ByteArray, source: ExpenseSource) {
+        pending = ReceiptImage(bytes, source)
     }
 
-    fun take(): ByteArray? = imageBytes.also { imageBytes = null }
+    fun take(): ReceiptImage? = pending.also { pending = null }
 }

@@ -21,6 +21,7 @@ kotlinx-serialization = "1.7.3"
 kotlinx-coroutines = "1.11.0"
 kotlinx-datetime = "0.8.0"
 mlkit-text-recognition = "16.0.1"
+camerax = "1.6.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -68,6 +69,12 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 
 # ML Kit (OCR Android)
 mlkit-text-recognition = { module = "com.google.mlkit:text-recognition", version.ref = "mlkit-text-recognition" }
+
+# CameraX (kamera custom di Android)
+camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

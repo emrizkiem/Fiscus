@@ -57,6 +57,19 @@ object ReceiptParser {
         "Guardian" to listOf("guardian"),
         "Watsons" to listOf("watsons"),
         "Kimia Farma" to listOf("kimia farma"),
+        "Marugame Udon" to listOf("marugame udon", "marugame"),
+        "HokBen" to listOf("hokben", "hoka hoka bento"),
+        "Yoshinoya" to listOf("yoshinoya"),
+        "Sushi Tei" to listOf("sushi tei"),
+        "Pepper Lunch" to listOf("pepper lunch"),
+        "Mie Gacoan" to listOf("mie gacoan", "gacoan"),
+        "Bakmi GM" to listOf("bakmi gm"),
+        "Solaria" to listOf("solaria"),
+        "Richeese Factory" to listOf("richeese factory", "richeese"),
+        "J.CO" to listOf("j.co"),
+        "Breadtalk" to listOf("breadtalk"),
+        "Point Coffee" to listOf("point coffee"),
+        "Tomoro Coffee" to listOf("tomoro coffee", "tomoro"),
     )
 
     private val knownIssuers = brandPatterns(

@@ -1,15 +1,6 @@
 package com.example.fiscus.presentation.navigation
 
 import androidx.compose.foundation.layout.Box
-import com.example.fiscus.data.ocr.ReceiptScanner
-import com.example.fiscus.data.ocr.assembleLines
-import com.example.fiscus.data.parser.ReceiptParser
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.AlertDialog
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -29,7 +20,9 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.TabNavigator
+import com.example.fiscus.domain.model.ExpenseSource
 import com.example.fiscus.presentation.addexpense.AddExpenseScreen
+import com.example.fiscus.presentation.camera.CameraScreen
 import com.example.fiscus.presentation.common.component.AddExpenseOption
 import com.example.fiscus.presentation.common.component.AddExpenseSheet
 import com.example.fiscus.presentation.common.component.FiscusSnackbar
@@ -37,8 +30,6 @@ import com.example.fiscus.presentation.common.picker.rememberImagePickerLauncher
 import com.example.fiscus.presentation.common.util.ExpenseAddedEvents
 import com.example.fiscus.presentation.common.util.PendingReceipt
 import com.example.fiscus.presentation.common.util.SnackbarMessenger
-import com.example.fiscus.presentation.common.util.formatRupiah
-import com.example.fiscus.presentation.common.util.formatFullDate
 import com.example.fiscus.presentation.expenselist.ExpenseListTab
 import com.example.fiscus.presentation.summary.SummaryTab
 import kotlinx.coroutines.launch
@@ -55,7 +46,7 @@ class MainScreen : Screen {
         val pendingReceipt = koinInject<PendingReceipt>()
         val imagePicker = rememberImagePickerLauncher { bytes ->
             if (bytes != null) {
-                pendingReceipt.put(bytes)
+                pendingReceipt.put(bytes, ExpenseSource.OCR_GALLERY)
                 navigator.push(AddExpenseScreen(isReceiptReview = true))
             }
         }
@@ -107,7 +98,7 @@ class MainScreen : Screen {
                     when (option) {
                         AddExpenseOption.MANUAL -> navigator.push(AddExpenseScreen())
                         AddExpenseOption.GALLERY -> imagePicker.launch()
-                        AddExpenseOption.CAMERA -> Unit
+                        AddExpenseOption.CAMERA -> navigator.push(CameraScreen())
                     }
                 },
             )
