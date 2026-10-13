@@ -7,6 +7,7 @@ import com.example.fiscus.domain.model.Expense
 import com.example.fiscus.domain.model.ExpenseSource
 import com.example.fiscus.domain.receipt.ReceiptReader
 import com.example.fiscus.domain.repository.ExpenseRepository
+import com.example.fiscus.presentation.common.util.ReceiptImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,13 +30,14 @@ class AddExpenseScreenModel(
     private val timeZone: TimeZone,
     private val receiptReader: ReceiptReader,
     expenseId: String? = null,
-    receiptImage: ByteArray? = null,
+    receiptImage: ReceiptImage? = null,
 ) : ScreenModel {
     private val _state = MutableStateFlow(
-        AddExpenseState(today = now().date, isEditMode = expenseId != null, receiptImage = receiptImage),
+        AddExpenseState(today = now().date, isEditMode = expenseId != null, receiptImage = receiptImage?.bytes),
     )
     val state: StateFlow<AddExpenseState> = _state.asStateFlow()
 
+    private val receiptSource: ExpenseSource? = receiptImage?.source
     private var original: Expense? = null
 
     init {
@@ -54,7 +56,7 @@ class AddExpenseScreenModel(
                 }
             }
         }
-        if (receiptImage != null) readReceipt(receiptImage)
+        if (receiptImage != null) readReceipt(receiptImage.bytes)
     }
 
     private fun readReceipt(imageBytes: ByteArray) {
@@ -132,8 +134,7 @@ class AddExpenseScreenModel(
                         category = category,
                         date = LocalDateTime(current.date, LocalTime(time.hour, time.minute, time.second)),
                         note = note,
-                        source = if (current.isReviewMode) ExpenseSource.OCR_GALLERY else ExpenseSource.MANUAL,
-                        // Gambar struk hanya dipakai selama review, tidak disimpan
+                        source = receiptSource ?: ExpenseSource.MANUAL,
                         receiptImagePath = null
                     ),
                 )

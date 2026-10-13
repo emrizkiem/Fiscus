@@ -6,6 +6,7 @@ import com.example.fiscus.domain.model.ExpenseSource
 import com.example.fiscus.domain.model.ReceiptScanResult
 import com.example.fiscus.mock.MockExpenseRepository
 import com.example.fiscus.mock.MockReceiptReader
+import com.example.fiscus.presentation.common.util.ReceiptImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -49,6 +50,7 @@ class AddExpenseScreenModelTest {
     private fun createScreenModel(
         expenseId: String? = null,
         receiptImage: ByteArray? = null,
+        receiptSource: ExpenseSource = ExpenseSource.OCR_GALLERY,
         receiptReader: MockReceiptReader = MockReceiptReader(),
     ) = AddExpenseScreenModel(
         repository = repository,
@@ -56,7 +58,7 @@ class AddExpenseScreenModelTest {
         timeZone = TimeZone.UTC,
         receiptReader = receiptReader,
         expenseId = expenseId,
-        receiptImage = receiptImage,
+        receiptImage = receiptImage?.let { ReceiptImage(it, receiptSource) },
     )
 
     private suspend fun savedExpenses() = repository.getExpensesByMonth(YearMonth(2026, 10)).first()
@@ -282,6 +284,19 @@ class AddExpenseScreenModelTest {
         val saved = repository.getExpensesByMonth(YearMonth(2026, 9)).first().single()
         assertEquals(127_600, saved.amount)
         assertEquals(ExpenseSource.OCR_GALLERY, saved.source)
+        assertNull(saved.receiptImagePath)
+    }
+
+    @Test
+    fun savingCameraReviewMarksSourceAsCamera() = runTest {
+        val reader = MockReceiptReader(ReceiptScanResult(amount = 75_400, merchant = "Indomaret", date = LocalDate(2026, 10, 4)))
+        val screenModel = createScreenModel(receiptImage = receiptBytes, receiptSource = ExpenseSource.OCR_CAMERA, receiptReader = reader)
+
+        screenModel.onCategorySelected(Category.SHOPPING)
+        screenModel.save()
+
+        val saved = savedExpenses().single()
+        assertEquals(ExpenseSource.OCR_CAMERA, saved.source)
         assertNull(saved.receiptImagePath)
     }
 
