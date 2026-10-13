@@ -190,8 +190,6 @@ class ReceiptParserTest {
         )
     }
 
-    // ---------- struk Indomaret (tahun 2 digit, logo salah baca) ----------
-
     private val indomaret = listOf(
         "NI MENARA Indbmarel)",
         "INDOMARET BOULEVARD",
@@ -257,5 +255,133 @@ class ReceiptParserTest {
         val lines = listOf("Transfer Berhasil", "Penerima BUDI SANTOSO", "Bayar via Alfamart")
 
         assertEquals("BUDI SANTOSO", ReceiptParser.parseMerchant(lines))
+    }
+
+    private val sinarmasAtm = listOf(
+        "bank",
+        "sinarmas",
+        "TANGGAL JAM STAN",
+        "05/07/2017 12:50:28 211597",
+        "15300201 - NDC ATM",
+        "PEMBAYARAN : GO-PAY CUSTOMER",
+        "NO PESAN : 08990069922",
+        "NAMA : AGUS SENTOSA",
+        "JML TAGIHAN: RP. 14.075",
+        "ADMIN BANK : RP. 2.000",
+        "JML BAYAR : RP. 16.075",
+        "BL/TH :07/2017",
+        "NO. REF: 718630211597",
+        "TRANSAKSI INI AKAN DIKENAKAN",
+        "BIAYA SEBESAR RP.2.000.00",
+        "STRUK INI ADALAH BUKTI",
+        "INFO:1500153 ATAU (021)50188888",
+        "WWW.BANKSINARMAS.COM",
+    )
+
+    private val bcaMTransfer = listOf(
+        "m-Transfer: BCA",
+        "BERHASIL",
+        "13/10/2026 07:42:08",
+        "70001089650828898",
+        "GOPAY TOPUP",
+        "Mxxxxxxx Rxxxx Mxxxxxx",
+        "JUMLAH Rp. 50,000.00",
+        "BIAYA ADMIN Rp. 1,000.00",
+        "Ref",
+        "950312026101307420799444A143ED6A5F00",
+        "Biaya Termasuk PPN (Bila ada)",
+        "PT. BANK CENTRAL ASIA TBK.",
+        "MENARA BCA - JAKARTA PUSAT",
+        "NPWP : 0013084496091000",
+    )
+
+    private val gopayTopUp = listOf(
+        "gopay",
+        "Rp50.000",
+        "GoPay Top Up",
+        "Via BCA Mobile banking",
+        "GoPay Topup",
+        "#2026101307415870001003794833 4",
+        "Chat dengan CS",
+        "Rincian transaksi",
+        "Status Selesai",
+        "Ditambahkan ke GoPay Saldo",
+        "Waktu 7:42",
+        "Tanggal 13 Okt 2026",
+        "ID transaksi 0320261013004208X...",
+        "Order ID BCA_20261013074158...",
+        "Jumlah Rp50.000",
+        "Total Rp50.000",
+        "Dikirim dari app GoPay. Dapetin gratis",
+        "transfer 100x/bulan!",
+    )
+
+    @Test
+    fun sinarmasAtmReceiptUsesJmlBayarAndIssuerBank() {
+        assertEquals(
+            ParsedReceipt(amount = 16_075, merchant = "Bank Sinarmas", date = LocalDate(2017, 7, 5)),
+            ReceiptParser.parse(sinarmasAtm),
+        )
+    }
+
+    @Test
+    fun bcaTransferAddsAdminFeeAndIgnoresWatermarkText() {
+        assertEquals(
+            ParsedReceipt(amount = 51_000, merchant = "BCA", date = LocalDate(2026, 10, 13)),
+            ReceiptParser.parse(bcaMTransfer),
+        )
+    }
+
+    @Test
+    fun gopayTopUpIsNotAttributedToFundingBank() {
+        assertEquals(
+            ParsedReceipt(amount = 50_000, merchant = "GoPay", date = LocalDate(2026, 10, 13)),
+            ReceiptParser.parse(gopayTopUp),
+        )
+    }
+
+    @Test
+    fun jmlTagihanPlusAdminIsUsedWhenThereIsNoJmlBayar() {
+        val lines = listOf("JML TAGIHAN: RP. 14.075", "ADMIN BANK : RP. 2.000")
+
+        assertEquals(16_075, ReceiptParser.parseAmount(lines))
+    }
+
+    @Test
+    fun adminFeeIsNotAddedWhenTotalExists() {
+        val lines = listOf("Jumlah Rp50.000", "Biaya Admin Rp1.000", "Total Rp51.000")
+
+        assertEquals(51_000, ReceiptParser.parseAmount(lines))
+    }
+
+    @Test
+    fun issuerIsOnlyDetectedInReceiptHeader() {
+        val lines = listOf("Warung Bu Sri", "Kopi Susu 1 18.000", "Total 18.000", "Bayar via BCA Mobile")
+
+        assertEquals("Warung Bu Sri", ReceiptParser.parseMerchant(lines))
+    }
+
+    @Test
+    fun knownStoreWinsOverIssuerHeader() {
+        val lines = listOf("gopay", "Pembayaran Berhasil", "Rp25.000", "Kopi Kenangan - Tebet", "Total Rp25.000")
+
+        assertEquals("Kopi Kenangan", ReceiptParser.parseMerchant(lines))
+    }
+
+    @Test
+    fun commonWordsAreNotMistakenForIssuers() {
+        assertEquals(
+            "Toko Sumber Rejeki",
+            ReceiptParser.parseMerchant(listOf("Transfer Dana Berhasil", "Toko Sumber Rejeki", "Total Rp 20.000")),
+        )
+        assertEquals(
+            "Warung Mandiri Jaya",
+            ReceiptParser.parseMerchant(listOf("Warung Mandiri Jaya", "Total 20.000")),
+        )
+    }
+
+    @Test
+    fun merchantAliasMatchesWebsiteName() {
+        assertEquals("Indomaret", ReceiptParser.parseMerchant(listOf("**** ****", "KLIKINDOMARET.COM")))
     }
 }
